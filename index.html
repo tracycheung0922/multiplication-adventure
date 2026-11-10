@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小二乘法大冒險 - 香港小學二年級數學互動教具</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pastel: {
+                            bg: '#fcf9ff',
+                            card: '#ffffff',
+                            purple: '#f3ebff',
+                            purpleDark: '#6b21a8',
+                            blue: '#e0f2fe',
+                            blueDark: '#0369a1',
+                            pink: '#fde2f3',
+                            pinkDark: '#be185d',
+                            yellow: '#fef9c3',
+                            yellowDark: '#854d0e',
+                            green: '#dcfce7',
+                            greenDark: '#15803d'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #fcf9ff 0%, #f3ebff 100%);
+            color: #382a4d;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .btn-pop {
+            transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+        }
+        .btn-pop:active {
+            transform: scale(0.93);
+        }
+
+        .group-box {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 3px dashed #c084fc;
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.08);
+            transition: transform 0.2s ease;
+        }
+        .group-box:hover {
+            transform: translateY(-2px);
+        }
+
+        @keyframes pulse-subtle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+        .pulse-target {
+            animation: pulse-subtle 1.8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased">
+
+    <!-- TOP HEADER -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-purple-100 p-3.5 shadow-sm sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            
+            <div class="flex items-center gap-3">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black text-purple-950 tracking-wide flex items-center gap-2">
+                        小二乘法大冒險
+                        <span class="text-xs bg-purple-200 text-purple-900 px-2.5 py-0.5 rounded-full font-bold">P2 數學</span>
+                    </h1>
+                    <p class="text-xs text-purple-700 font-bold">圖像化「連加法」與「乘數表」探索教具</p>
+                </div>
+            </div>
+
+            <!-- Header Tools -->
+            <div class="flex items-center gap-2">
+                <!-- Sound Toggle -->
+                <button onclick="toggleAudio()" id="btn-sound" class="px-3.5 py-2 bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-xs rounded-xl transition flex items-center gap-1.5 btn-pop border border-purple-200 shadow-xs">
+                    <i class="fa-solid fa-volume-high text-purple-700" id="sound-icon"></i>
+                    <span id="sound-text">音效: 開</span>
+                </button>
+
+                <!-- Help Guide Button -->
+                <button onclick="openHelpModal()" class="px-3.5 py-2 bg-pink-100 hover:bg-pink-200 text-pink-900 font-bold text-xs rounded-xl transition flex items-center gap-1.5 btn-pop border border-pink-200 shadow-xs">
+                    <i class="fa-solid fa-graduation-cap text-pink-700"></i>
+                    <span>學習指引</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col gap-4">
+
+        <!-- 1. TABLE SELECTOR & MODE TABS BAR -->
+        <section class="bg-white/90 rounded-3xl p-4 shadow-sm border border-purple-100 flex flex-col gap-3">
+            
+            <!-- Table Selection Chips -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-list-check text-purple-600"></i> 選擇練習乘數表：
+                    </span>
+                    <span class="text-[11px] text-purple-600 font-bold">小二初期重點：2, 5, 10 乘數表</span>
+                </div>
+                
+                <div class="flex flex-wrap gap-1.5" id="table-buttons-container">
+                    <!-- Dynamic Buttons Generated in JS -->
+                </div>
+            </div>
+
+            <hr class="border-purple-100 my-0.5">
+
+            <!-- Mode Selection Tabs -->
+            <div class="grid grid-cols-2 gap-2 bg-purple-50/70 p-1.5 rounded-2xl border border-purple-100">
+                <button id="tab-btn-practice" onclick="switchMode('practice')" class="py-3 rounded-xl font-black text-sm md:text-base transition-all bg-white text-purple-950 shadow-sm border border-purple-200 flex items-center justify-center gap-2">
+                    <span>🌱 圖像學習模式</span>
+                    <span class="text-xs font-bold text-purple-600 hidden sm:inline">(步驟解構與提示)</span>
+                </button>
+                <button id="tab-btn-quiz" onclick="switchMode('quiz')" class="py-3 rounded-xl font-bold text-sm md:text-base transition-all text-purple-700 hover:bg-purple-100/50 flex items-center justify-center gap-2">
+                    <span>⭐ 闖關大挑戰</span>
+                    <span class="text-xs font-bold text-pink-600 hidden sm:inline">(10 題答題測試)</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- MODE 1: VISUAL PRACTICE MODE -->
+        <!-- =================================================================== -->
+        <section id="section-practice" class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            
+            <!-- Left: Visual Item Groups Display (7 Cols) -->
+            <div class="lg:col-span-7 bg-white/90 rounded-3xl p-4 sm:p-5 shadow-sm border border-purple-100 flex flex-col items-center gap-4">
+                
+                <div class="w-full flex justify-between items-center">
+                    <span class="text-xs font-black text-purple-900 bg-purple-100 px-3 py-1 rounded-xl flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye text-purple-600"></i> 具體圖像觀察區
+                    </span>
+                    <button onclick="nextPracticeQuestion()" class="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1 rounded-xl border border-purple-200 transition btn-pop">
+                        🎲 換一題
+                    </button>
+                </div>
+
+                <!-- Item Groups Grid Canvas Container -->
+                <div id="visual-groups-container" class="w-full min-h-[200px] sm:min-h-[240px] bg-purple-50/40 rounded-2xl p-4 border border-purple-100 flex flex-wrap items-center justify-center gap-3">
+                    <!-- Dynamic Groups rendered here -->
+                </div>
+
+                <!-- Mathematical Breakdown Hint Card -->
+                <div class="w-full bg-gradient-to-r from-sky-50 via-purple-50 to-pink-50 rounded-2xl p-3.5 border border-purple-100 flex flex-col gap-2 text-xs">
+                    <div class="flex items-center gap-2 font-black text-purple-900 text-sm">
+                        <span>💡</span> 概念拆解提示：
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 font-bold text-purple-900">
+                        <div class="bg-white/80 p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                            <span class="text-purple-600">1. 組數：</span> 共有 <span id="hint-groups" class="text-base font-black text-sky-700">?</span> 個組/盤/包
+                        </div>
+                        <div class="bg-white/80 p-2.5 rounded-xl border border-purple-100 shadow-2xs">
+                            <span class="text-purple-600">2. 每組數量：</span> 每組有 <span id="hint-items" class="text-base font-black text-pink-700">?</span> 個物品
+                        </div>
+                    </div>
+                    <div class="bg-white/90 p-2.5 rounded-xl border border-purple-100 font-bold text-purple-900 shadow-2xs">
+                        <span class="text-purple-600">3. 連加算式：</span> <span id="hint-addition" class="text-xs sm:text-sm text-purple-950 font-black">? + ? = ?</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Interactive Question & Answer Options (5 Cols) -->
+            <div class="lg:col-span-5 bg-white/90 rounded-3xl p-5 shadow-sm border border-purple-100 flex flex-col gap-4">
+                
+                <div class="bg-gradient-to-br from-purple-100/70 to-pink-100/70 p-4 rounded-2xl border border-purple-200 text-center space-y-1">
+                    <p class="text-xs font-bold text-purple-700">請計算乘法算式結果：</p>
+                    <p id="practice-equation-text" class="text-3xl sm:text-4xl font-black text-purple-950 tracking-wider">
+                        ? × ? = ?
+                    </p>
+                </div>
+
+                <!-- Options Grid -->
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-black text-purple-900 block">請點擊正確答案：</label>
+                    <div id="practice-options-grid" class="grid grid-cols-2 gap-2.5">
+                        <!-- 4 Large Option Buttons Generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Feedback Banner -->
+                <div id="practice-feedback" class="hidden p-3.5 rounded-2xl text-xs md:text-sm font-bold transition-all"></div>
+
+                <button id="btn-practice-next" onclick="nextPracticeQuestion()" class="hidden w-full py-3.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-black text-base rounded-2xl shadow-sm transition btn-pop">
+                    下一題 👉
+                </button>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- MODE 2: QUIZ CHALLENGE MODE -->
+        <!-- =================================================================== -->
+        <section id="section-quiz" class="hidden grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            
+            <!-- Quiz Dashboard Header -->
+            <div class="lg:col-span-12 bg-white/90 rounded-3xl p-4 shadow-sm border border-purple-100 flex flex-wrap justify-between items-center gap-3">
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🌟</span>
+                        <div>
+                            <p class="text-[10px] text-purple-600 font-bold uppercase">目前得分</p>
+                            <p id="quiz-score" class="text-xl font-black text-purple-950">0 分</p>
+                        </div>
+                    </div>
+                    <div class="h-8 w-px bg-purple-100"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🔥</span>
+                        <div>
+                            <p class="text-[10px] text-purple-600 font-bold uppercase">連勝 Combo</p>
+                            <p id="quiz-streak" class="text-xl font-black text-pink-600">0 次</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <span id="quiz-progress-text" class="text-xs font-extrabold bg-purple-100 text-purple-900 px-3 py-1.5 rounded-xl border border-purple-200">
+                        進度: 第 1 / 10 題
+                    </span>
+                    <button onclick="restartQuiz()" class="text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl border border-purple-200 transition btn-pop">
+                        🔄 重新開始
+                    </button>
+                </div>
+            </div>
+
+            <!-- Left: Quiz Visual / Hint Group (6 Cols) -->
+            <div class="lg:col-span-6 bg-white/90 rounded-3xl p-4 sm:p-5 shadow-sm border border-purple-100 flex flex-col items-center gap-4">
+                <div class="w-full flex justify-between items-center">
+                    <span class="text-xs font-black text-purple-900 bg-purple-100 px-3 py-1 rounded-xl">
+                        🧩 闖關題目圖示
+                    </span>
+                </div>
+
+                <!-- Quiz Group Visual -->
+                <div id="quiz-groups-container" class="w-full min-h-[200px] bg-purple-50/40 rounded-2xl p-4 border border-purple-100 flex flex-wrap items-center justify-center gap-2.5">
+                    <!-- Dynamic rendering -->
+                </div>
+            </div>
+
+            <!-- Right: Quiz Interactive Controls (6 Cols) -->
+            <div class="lg:col-span-6 bg-white/90 rounded-3xl p-5 shadow-sm border border-purple-100 flex flex-col gap-4">
+                
+                <div class="bg-gradient-to-br from-purple-100 via-pink-100 to-sky-100 p-5 rounded-2xl border border-purple-200 text-center space-y-2 shadow-xs">
+                    <p class="text-xs font-black text-purple-800">請算出正確答案：</p>
+                    <p id="quiz-equation-text" class="text-4xl sm:text-5xl font-black text-purple-950 tracking-wider">
+                        ? × ? = ?
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-black text-purple-900 block">請選擇：</label>
+                    <div id="quiz-options-grid" class="grid grid-cols-2 gap-3">
+                        <!-- Options generated by JS -->
+                    </div>
+                </div>
+
+                <div id="quiz-feedback" class="hidden p-3.5 rounded-2xl text-xs md:text-sm font-bold transition-all"></div>
+
+                <button id="btn-quiz-next" onclick="nextQuizQuestion()" class="hidden w-full py-3.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-black text-base rounded-2xl shadow-sm transition btn-pop">
+                    下一題 👉
+                </button>
+            </div>
+        </section>
+
+        <!-- QUIZ FINISH RESULT MODAL -->
+        <div id="modal-result" class="fixed inset-0 bg-purple-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-3xl max-w-md w-full p-6 border-4 border-purple-200 shadow-2xl text-center space-y-4">
+                <div class="text-5xl" id="result-emoji">🏆</div>
+                <div>
+                    <h3 class="text-2xl font-black text-purple-950" id="result-title">太棒了！挑戰完成！</h3>
+                    <p class="text-xs text-purple-700 font-bold mt-1" id="result-subtitle">你已經成功掌握乘數表概念！</p>
+                </div>
+
+                <div class="bg-purple-50 p-4 rounded-2xl border border-purple-100 space-y-2">
+                    <div class="flex justify-between items-center text-sm font-bold">
+                        <span class="text-purple-700">最終得分：</span>
+                        <span class="text-2xl font-black text-purple-950" id="result-final-score">100 分</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm font-bold">
+                        <span class="text-purple-700">最高連勝：</span>
+                        <span class="text-lg font-black text-pink-600" id="result-final-streak">10 次</span>
+                    </div>
+                </div>
+
+                <button onclick="restartQuiz()" class="w-full py-3.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-black text-base rounded-2xl shadow-sm transition btn-pop">
+                    🔄 再次挑戰
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- HELP INSTRUCTION MODAL -->
+    <div id="help-modal" class="fixed inset-0 bg-purple-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 border-4 border-purple-200 shadow-2xl relative space-y-4">
+            <button onclick="closeHelpModal()" class="absolute top-4 right-4 text-purple-400 hover:text-purple-700 w-8 h-8 rounded-full flex items-center justify-center bg-purple-50">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-purple-950">香港小二乘法學習指南</h3>
+                    <p class="text-xs text-purple-600 font-bold">小學二年級上學期重點觀念</p>
+                </div>
+            </div>
+
+            <div class="text-xs text-purple-900 space-y-2.5 leading-relaxed">
+                <div class="bg-purple-50 p-3 rounded-2xl border border-purple-100">
+                    <strong class="text-purple-950 font-black block mb-1">1. 什麼是乘法？(連加法的快捷法)</strong>
+                    <p>乘法就是把「相同數量」加在一起。例如有 3 個盤子，每個盤子有 4 個蘋果，連加就是 4 + 4 + 4 = 12，寫成乘法就是 3 × 4 = 12 (或 4 × 3 = 12)。</p>
+                </div>
+                <div class="bg-pink-50 p-3 rounded-2xl border border-pink-100">
+                    <strong class="text-pink-950 font-black block mb-1">2. 小二建議練習順序</strong>
+                    <p>建議先從 <b>2, 5, 10 乘數表</b> 開始練習（進度最早學），熟練後再挑戰 3, 4, 6, 7, 8, 9 乘數表！</p>
+                </div>
+            </div>
+
+            <button onclick="closeHelpModal()" class="w-full py-3 bg-purple-300 hover:bg-purple-400 text-purple-950 font-black text-sm rounded-xl transition btn-pop">
+                我知道了，開始練習！
+            </button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white/80 border-t border-purple-100 text-center py-3 text-xs text-purple-700 font-bold">
+    </footer>
+
+    <!-- LOGIC & ENGINE SCRIPT -->
+    <script>
+        /* ==========================================================================
+           1. GAME CONFIGURATION & STATE
+           ========================================================================== */
+        const EMOJIS = ['🍎', '⭐️', '🍪', '🐥', '🎈', '🍬', '🍓', '🚗', '🌸', '🎁'];
+        
+        const PRACTICE_TABLES = [
+            { id: '2', label: '2 乘數表', highlight: true },
+            { id: '5', label: '5 乘數表', highlight: true },
+            { id: '10', label: '10 乘數表', highlight: true },
+            { id: '3', label: '3 乘數表' },
+            { id: '4', label: '4 乘數表' },
+            { id: '6', label: '6 乘數表' },
+            { id: '7', label: '7 乘數表' },
+            { id: '8', label: '8 乘數表' },
+            { id: '9', label: '9 乘數表' },
+            { id: '1', label: '1 乘數表' },
+            { id: '0', label: '0 乘數表' },
+            { id: 'all', label: '🌟 綜合全表 (1-10)' }
+        ];
+
+        let state = {
+            selectedTable: '2',
+            mode: 'practice', // 'practice' or 'quiz'
+            soundEnabled: true,
+            
+            // Current Question Data
+            groupsCount: 3,       // multiplier A (e.g., 3 groups)
+            itemsPerGroup: 4,     // multiplicand B (e.g., 4 items per group)
+            totalAnswer: 12,
+            currentEmoji: '🍎',
+            
+            // Quiz Mode States
+            quizScore: 0,
+            quizStreak: 0,
+            quizCurrentIndex: 0,
+            quizTotalQuestions: 10,
+            quizQuestionsList: []
+        };
+
+        /* ==========================================================================
+           2. WEB AUDIO SYNTHESIZER
+           ========================================================================== */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(450, now);
+                    osc.frequency.exponentialRampToValueAtTime(700, now + 0.05);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.08);
+                    osc.frequency.setValueAtTime(783.99, now + 0.16);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(240, now);
+                    osc.frequency.setValueAtTime(180, now + 0.1);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                }
+            } catch (e) {}
+        }
+
+        function toggleAudio() {
+            state.soundEnabled = !state.soundEnabled;
+            const text = document.getElementById('sound-text');
+            const icon = document.getElementById('sound-icon');
+            if (state.soundEnabled) {
+                text.innerText = '音效: 開';
+                icon.className = 'fa-solid fa-volume-high text-purple-700';
+            } else {
+                text.innerText = '音效: 關';
+                icon.className = 'fa-solid fa-volume-xmark text-purple-400';
+            }
+            playSound('click');
+        }
+
+        /* ==========================================================================
+           3. UI INITIALIZATION & RENDERERS
+           ========================================================================== */
+        window.onload = function() {
+            renderTableButtons();
+            generateNewPracticeQuestion();
+        };
+
+        function renderTableButtons() {
+            const container = document.getElementById('table-buttons-container');
+            container.innerHTML = '';
+
+            PRACTICE_TABLES.forEach(tbl => {
+                const btn = document.createElement('button');
+                const isSelected = (state.selectedTable === tbl.id);
+                
+                let baseStyle = "px-3 py-1.5 rounded-xl font-bold text-xs transition btn-pop border shadow-2xs flex items-center gap-1 ";
+                if (isSelected) {
+                    baseStyle += "bg-purple-600 text-white border-purple-700 font-black shadow-sm";
+                } else if (tbl.highlight) {
+                    baseStyle += "bg-pink-100 text-pink-950 border-pink-200 hover:bg-pink-200 font-extrabold";
+                } else {
+                    baseStyle += "bg-white text-purple-900 border-purple-200 hover:bg-purple-50";
+                }
+
+                btn.className = baseStyle;
+                btn.innerText = tbl.label;
+                btn.onclick = () => {
+                    playSound('click');
+                    state.selectedTable = tbl.id;
+                    renderTableButtons();
+                    if (state.mode === 'practice') {
+                        generateNewPracticeQuestion();
+                    } else {
+                        restartQuiz();
+                    }
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function switchMode(mode) {
+            playSound('click');
+            state.mode = mode;
+            const btnPractice = document.getElementById('tab-btn-practice');
+            const btnQuiz = document.getElementById('tab-btn-quiz');
+            const secPractice = document.getElementById('section-practice');
+            const secQuiz = document.getElementById('section-quiz');
+
+            if (mode === 'practice') {
+                btnPractice.className = "py-3 rounded-xl font-black text-sm md:text-base transition-all bg-white text-purple-950 shadow-sm border border-purple-200 flex items-center justify-center gap-2";
+                btnQuiz.className = "py-3 rounded-xl font-bold text-sm md:text-base transition-all text-purple-700 hover:bg-purple-100/50 flex items-center justify-center gap-2";
+                secPractice.classList.remove('hidden');
+                secQuiz.classList.add('hidden');
+                generateNewPracticeQuestion();
+            } else {
+                btnQuiz.className = "py-3 rounded-xl font-black text-sm md:text-base transition-all bg-white text-purple-950 shadow-sm border border-purple-200 flex items-center justify-center gap-2";
+                btnPractice.className = "py-3 rounded-xl font-bold text-sm md:text-base transition-all text-purple-700 hover:bg-purple-100/50 flex items-center justify-center gap-2";
+                secQuiz.classList.remove('hidden');
+                secQuiz.classList.add('grid');
+                secPractice.classList.add('hidden');
+                restartQuiz();
+            }
+        }
+
+        /* ==========================================================================
+           4. VISUAL ITEM GROUP GENERATOR (CONCRETE REPRESENTATION)
+           ========================================================================== */
+        function renderVisualGroups(containerId, groups, itemsPerGroup, emoji) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            if (groups === 0 || itemsPerGroup === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = "text-center text-purple-600 font-bold py-6 text-xs";
+                emptyMsg.innerHTML = `⚠️ 乘以 0 代表「完全沒有」或「空盤子」<br><span class="text-base text-purple-950 font-black mt-1 block">結果都是 0</span>`;
+                container.appendChild(emptyMsg);
+                return;
+            }
+
+            for (let g = 0; g < groups; g++) {
+                const groupCard = document.createElement('div');
+                groupCard.className = "group-box rounded-2xl p-2.5 flex flex-col items-center justify-center gap-1 min-w-[75px]";
+
+                const itemsGrid = document.createElement('div');
+                itemsGrid.className = "flex flex-wrap justify-center items-center gap-1 max-w-[110px]";
+
+                for (let i = 0; i < itemsPerGroup; i++) {
+                    const itemSpan = document.createElement('span');
+                    itemSpan.className = "text-lg sm:text-xl transform hover:scale-125 transition";
+                    itemSpan.innerText = emoji;
+                    itemsGrid.appendChild(itemSpan);
+                }
+
+                const badge = document.createElement('span');
+                badge.className = "text-[10px] font-black text-purple-800 bg-purple-100 px-2 py-0.5 rounded-full mt-1 border border-purple-200";
+                badge.innerText = `第 ${g + 1} 組 (${itemsPerGroup}個)`;
+
+                groupCard.appendChild(itemsGrid);
+                groupCard.appendChild(badge);
+                container.appendChild(groupCard);
+            }
+        }
+
+        /* ==========================================================================
+           5. MODE 1: PRACTICE MODE LOGIC
+           ========================================================================== */
+        function getRandomTableNum() {
+            if (state.selectedTable === 'all') {
+                const available = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                return available[Math.floor(Math.random() * available.length)];
+            } else {
+                return parseInt(state.selectedTable);
+            }
+        }
+
+        function generateNewPracticeQuestion() {
+            const numB = getRandomTableNum(); // Multiplicand B
+            const numA = Math.floor(Math.random() * 10) + 1; // Groups A (1-10)
+            
+            state.groupsCount = numA;
+            state.itemsPerGroup = numB;
+            state.totalAnswer = numA * numB;
+            state.currentEmoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+
+            // Render Visual Groups
+            renderVisualGroups('visual-groups-container', state.groupsCount, state.itemsPerGroup, state.currentEmoji);
+
+            // Render Concept Hints
+            document.getElementById('hint-groups').innerText = `${state.groupsCount}`;
+            document.getElementById('hint-items').innerText = `${state.itemsPerGroup}`;
+            
+            // Build Addition String (e.g. 4 + 4 + 4)
+            if (state.itemsPerGroup === 0 || state.groupsCount === 0) {
+                document.getElementById('hint-addition').innerText = `0`;
+            } else {
+                let addArr = [];
+                for (let i = 0; i < state.groupsCount; i++) {
+                    addArr.push(state.itemsPerGroup);
+                }
+                document.getElementById('hint-addition').innerText = `${addArr.join(' + ')} = ${state.totalAnswer}`;
+            }
+
+            // Render Main Question Equation
+            document.getElementById('practice-equation-text').innerHTML = `
+                ${state.groupsCount} × ${state.itemsPerGroup} = <span class="text-pink-600 underline decoration-pink-300">?</span>
+            `;
+
+            // Hide Feedback and Next Buttons
+            document.getElementById('practice-feedback').classList.add('hidden');
+            document.getElementById('btn-practice-next').classList.add('hidden');
+
+            // Generate 4 Multiple Choice Options
+            renderPracticeOptions();
+        }
+
+        function generateDistractors(correctVal) {
+            let options = new Set([correctVal]);
+            while (options.size < 4) {
+                let offset = (Math.floor(Math.random() * 5) + 1) * (Math.random() < 0.5 ? 1 : -1);
+                let fake = correctVal + offset;
+                if (fake >= 0 && fake <= 100) {
+                    options.add(fake);
+                }
+            }
+            return Array.from(options).sort(() => Math.random() - 0.5);
+        }
+
+        function renderPracticeOptions() {
+            const grid = document.getElementById('practice-options-grid');
+            grid.innerHTML = '';
+
+            const options = generateDistractors(state.totalAnswer);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "btn-pop py-3.5 px-2 bg-purple-50 hover:bg-purple-200 text-purple-950 font-black text-xl rounded-2xl border-2 border-purple-200 shadow-sm text-center transition";
+                btn.innerText = opt;
+                btn.onclick = () => checkPracticeAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkPracticeAnswer(userAns, btnElement) {
+            const feedback = document.getElementById('practice-feedback');
+            feedback.classList.remove('hidden');
+
+            if (userAns === state.totalAnswer) {
+                playSound('correct');
+                feedback.className = "p-3.5 rounded-2xl text-xs sm:text-sm font-bold bg-green-100 text-green-950 border border-green-200";
+                feedback.innerHTML = `🎉 答對了！太棒了！<br><span class="text-xs font-semibold">【計算過程】${state.groupsCount} 組 × 每組 ${state.itemsPerGroup} 個 = <b>${state.totalAnswer}</b></span>`;
+                
+                document.getElementById('practice-equation-text').innerHTML = `
+                    ${state.groupsCount} × ${state.itemsPerGroup} = <span class="text-green-700 font-black">${state.totalAnswer}</span>
+                `;
+
+                confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
+                document.getElementById('btn-practice-next').classList.remove('hidden');
+
+            } else {
+                playSound('wrong');
+                feedback.className = "p-3.5 rounded-2xl text-xs sm:text-sm font-bold bg-pink-100 text-pink-950 border border-pink-200";
+                feedback.innerHTML = `❌ 答案不對喔！請數一數左邊共有幾多個 ${state.currentEmoji} 吧！`;
+            }
+        }
+
+        function nextPracticeQuestion() {
+            playSound('click');
+            generateNewPracticeQuestion();
+        }
+
+        /* ==========================================================================
+           6. MODE 2: QUIZ CHALLENGE MODE LOGIC
+           ========================================================================== */
+        function restartQuiz() {
+            playSound('click');
+            state.quizScore = 0;
+            state.quizStreak = 0;
+            state.quizCurrentIndex = 0;
+            
+            document.getElementById('quiz-score').innerText = `${state.quizScore} 分`;
+            document.getElementById('quiz-streak').innerText = `${state.quizStreak} 次`;
+            document.getElementById('modal-result').classList.add('hidden');
+
+            generateQuizQuestionsList();
+            loadQuizQuestion();
+        }
+
+        function generateQuizQuestionsList() {
+            state.quizQuestionsList = [];
+            for (let i = 0; i < state.quizTotalQuestions; i++) {
+                const numB = getRandomTableNum();
+                const numA = Math.floor(Math.random() * 10) + 1;
+                state.quizQuestionsList.push({
+                    groups: numA,
+                    items: numB,
+                    ans: numA * numB,
+                    emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)]
+                });
+            }
+        }
+
+        function loadQuizQuestion() {
+            if (state.quizCurrentIndex >= state.quizTotalQuestions) {
+                showQuizResults();
+                return;
+            }
+
+            const currentQ = state.quizQuestionsList[state.quizCurrentIndex];
+            document.getElementById('quiz-progress-text').innerText = `進度: 第 ${state.quizCurrentIndex + 1} / ${state.quizTotalQuestions} 題`;
+
+            // Render Visual
+            renderVisualGroups('quiz-groups-container', currentQ.groups, currentQ.items, currentQ.emoji);
+
+            // Equation
+            document.getElementById('quiz-equation-text').innerHTML = `
+                ${currentQ.groups} × ${currentQ.items} = <span class="text-pink-600 underline decoration-pink-300">?</span>
+            `;
+
+            // Options
+            const grid = document.getElementById('quiz-options-grid');
+            grid.innerHTML = '';
+            const options = generateDistractors(currentQ.ans);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "btn-pop py-3.5 px-2 bg-purple-50 hover:bg-purple-200 text-purple-950 font-black text-xl rounded-2xl border-2 border-purple-200 shadow-sm text-center transition";
+                btn.innerText = opt;
+                btn.onclick = () => checkQuizAnswer(opt, currentQ);
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('btn-quiz-next').classList.add('hidden');
+        }
+
+        function checkQuizAnswer(userAns, questionObj) {
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden');
+
+            if (userAns === questionObj.ans) {
+                playSound('correct');
+                state.quizScore += 10;
+                state.quizStreak += 1;
+                document.getElementById('quiz-score').innerText = `${state.quizScore} 分`;
+                document.getElementById('quiz-streak').innerText = `${state.quizStreak} 次`;
+
+                feedback.className = "p-3.5 rounded-2xl text-xs sm:text-sm font-bold bg-green-100 text-green-950 border border-green-200";
+                feedback.innerHTML = `🎉 正確！加 10 分！`;
+
+                document.getElementById('quiz-equation-text').innerHTML = `
+                    ${questionObj.groups} × ${questionObj.items} = <span class="text-green-700 font-black">${questionObj.ans}</span>
+                `;
+
+                confetti({ particleCount: 30, spread: 45, origin: { y: 0.7 } });
+                document.getElementById('btn-quiz-next').classList.remove('hidden');
+
+            } else {
+                playSound('wrong');
+                state.quizStreak = 0;
+                document.getElementById('quiz-streak').innerText = `${state.quizStreak} 次`;
+
+                feedback.className = "p-3.5 rounded-2xl text-xs sm:text-sm font-bold bg-pink-100 text-pink-950 border border-pink-200";
+                feedback.innerHTML = `❌ 不對喔！正確答案是 <b>${questionObj.ans}</b> (${questionObj.groups} × ${questionObj.items})`;
+                document.getElementById('btn-quiz-next').classList.remove('hidden');
+            }
+        }
+
+        function nextQuizQuestion() {
+            playSound('click');
+            state.quizCurrentIndex++;
+            loadQuizQuestion();
+        }
+
+        function showQuizResults() {
+            document.getElementById('modal-result').classList.remove('hidden');
+            document.getElementById('result-final-score').innerText = `${state.quizScore} 分`;
+            document.getElementById('result-final-streak').innerText = `${state.quizStreak} 次`;
+
+            if (state.quizScore >= 80) {
+                document.getElementById('result-emoji').innerText = '🏆';
+                document.getElementById('result-title').innerText = '太厲害了！乘法小大師！';
+            } else {
+                document.getElementById('result-emoji').innerText = '👏';
+                document.getElementById('result-title').innerText = '繼續加油！再試一次！';
+            }
+
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+        }
+
+        /* ==========================================================================
+           7. HELP MODAL CONTROLS
+           ========================================================================== */
+        function openHelpModal() {
+            playSound('click');
+            document.getElementById('help-modal').classList.remove('hidden');
+        }
+        function closeHelpModal() {
+            playSound('click');
+            document.getElementById('help-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
